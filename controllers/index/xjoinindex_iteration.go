@@ -5,6 +5,7 @@ import (
 	"github.com/redhatinsights/xjoin-go-lib/pkg/utils"
 	"github.com/redhatinsights/xjoin-operator/api/v1alpha1"
 	"github.com/redhatinsights/xjoin-operator/controllers/common"
+	"github.com/redhatinsights/xjoin-operator/controllers/common/labels"
 	"github.com/redhatinsights/xjoin-operator/controllers/events"
 	"github.com/redhatinsights/xjoin-operator/controllers/parameters"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -38,7 +39,9 @@ func (i *XJoinIndexIteration) CreateIndexPipeline(name string, version string) (
 			"name":      name + "." + version,
 			"namespace": i.Iteration.Instance.GetNamespace(),
 			"labels": map[string]interface{}{
-				common.ComponentNameLabel: name,
+				labels.ComponentName:   name,
+				labels.IndexName:       name,
+				labels.PipelineVersion: version,
 			},
 		},
 		"spec": spec,
@@ -73,6 +76,11 @@ func (i *XJoinIndexIteration) Finalize() (err error) {
 	i.Log.Info("Starting finalizer")
 
 	err = i.DeleteAllResourceTypeWithComponentName(common.IndexPipelineGVK, i.GetInstance().GetName())
+	if err != nil {
+		return errors.Wrap(err, 0)
+	}
+
+	err = i.DeleteAllResourceTypeWithComponentName(common.IndexValidatorGVK, i.GetInstance().GetName())
 	if err != nil {
 		return errors.Wrap(err, 0)
 	}
